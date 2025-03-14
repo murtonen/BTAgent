@@ -1,7 +1,8 @@
-BTModel Web - AI Multi-Agent Business Analysis
- * A web application that uses OpenAI-powered agents to analyze companies from multiple perspectives.
+# BTModel Web - AI Multi-Agent Business Analysis
+A web application that uses OpenAI-powered agents to analyze companies from multiple perspectives.
 
-Overview
+## Overview
+
 This application simulates a collaborative discussion between AI agents representing different business roles:
 
   * Business Strategist: Focuses on market positioning and competitive advantage
@@ -11,7 +12,7 @@ This application simulates a collaborative discussion between AI agents represen
 
   The application first researches a company using web search, then conducts a two-round discussion between the agents, and finally generates an executive summary.
 
-File Structure
+## File Structure
 
   * app.py: Main Flask application with routes and SocketIO events
   * agents.py: AI agent classes that interact with OpenAI API
@@ -20,13 +21,13 @@ File Structure
   * requirements.txt: Project dependencies
   * .env.example: Example environment variables file
 
-Getting Started
+## Getting Started
 
   * Clone the repository
   * Create a virtual environment and install dependencies:
   * python -m venv venv
   * source venv/bin/activate
-  * # On Windows: venv\Scripts\activate
+  * On Windows: venv\Scripts\activate
   * pip install -r requirements.txt
 
   Create a .env file based on .env.example and add your OpenAI API key:
@@ -38,7 +39,7 @@ Getting Started
 
   Open your browser and navigate to http://localhost:5000
 
-Features
+## Features
 
   * Real-time updates via WebSockets
   * Web-based research of companies
@@ -46,7 +47,7 @@ Features
   * Executive summary generation
   * Progress tracking UI
 
-Technologies Used
+## Technologies Used
 
   * Flask: Python web framework
   * Flask-SocketIO: Real-time communication
@@ -54,7 +55,7 @@ Technologies Used
   * DuckDuckGo Search: Web research capability
   * TailwindCSS: UI styling
 
-Notes
+## Notes
   This is an MVP implementation and has several limitations:
 
  *  Error handling is basic
