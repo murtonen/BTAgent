@@ -1,1 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTModel Web - Analysis Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #3B82F6, #10B981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .agent-message {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .agent-message.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .agent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        /* Agent color coding */
+        .agent-Business { background-color: #3B82F6; }
+        .agent-Technology { background-color: #8B5CF6; }
+        .agent-Product { background-color: #10B981; }
+        .agent-Innovation { background-color: #F59E0B; }
+        .agent-Facilitator { background-color: #6B7280; }
+        
+        .message-Business { border-left-color: #3B82F6; }
+        .message-Technology { border-left-color: #8B5CF6; }
+        .message-Product { border-left-color: #10B981; }
+        .message-Innovation { border-left-color: #F59E0B; }
+        .message-Facilitator { border-left-color: #6B7280; }
+        
+        #conversation-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        /* Add styles for better message display */
+        .message-text {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .prose strong {
+            font-weight: 600;
+        }
+        
+        .prose em {
+            font-style: italic;
+            color: #4B5563;
+        }
+        
+        .message-text em {
+            font-style: italic;
+            color: #4B5563;
+        }
+        
+        /* Preserve formatting in summary and research content */
+        #research-data, #summary-content {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        /* Optimized spacing for research and summary content */
+        #research-data p, #summary-content p {
+            margin-bottom: 0.75rem;
+        }
+        
+        /* Add proper spacing after section titles */
+        #research-data strong.section-title, 
+        #summary-content h3 {
+            display: block;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            color: #2d3748;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        /* First section title shouldn't have top margin */
+        #research-data strong.section-title:first-child,
+        #summary-content h3:first-child {
+            margin-top: 0;
+        }
+        
+        /* Better spacing for list items */
+        #research-data .bullet-list-item,
+        #summary-content .bullet-list-item {
+            margin-top: 0.35rem;
+            margin-bottom: 0.35rem;
+            padding-left: 0.5rem;
+        }
+        
+        /* Bullet item styling */
+        #research-data .bullet-item,
+        #summary-content .bullet-item {
+            display: inline-block;
+            width: 1rem;
+            margin-right: 0.25rem;
+        }
+        
+        /* Add spacing between major sections */
+        #research-data .section-container {
+            margin-bottom: 1rem;
+        }
+        
+        /* Reduce first paragraph margin if it follows a section title */
+        #research-data strong.section-title + p,
+        #summary-content h3 + p {
+            margin-top: 0.5rem;
+        }
+        
+        /* Format numbered sections in summary */
+        #summary-content h3 {
+            margin-top: 1.75rem;
+            font-weight: 600;
+        }
+        
+        /* Format the first numbered section */
+        #summary-content h3:first-of-type {
+            margin-top: 0.75rem;
+        }
+        
+        /* Reduce spacing between numbered items in summary */
+        #summary-content p + h3 {
+            margin-top: 1rem; /* Reduced spacing between sections */
+        }
+        
+        /* Keep bullet points closer together within the same section */
+        #summary-content .bullet-list-item {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem; /* Reduced from 0.35rem */
+        }
+        
+        /* Add minimal spacing after a bulleted item */
+        #summary-content .bullet-list-item + .bullet-list-item {
+            margin-top: 0.2rem; /* Tighter spacing between consecutive bullet points */
+        }
+        
+        /* Remove bottom margin from the last bullet item in a section */
+        #summary-content .bullet-list-item:last-of-type {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Adjust spacing after section headers */
+        #summary-content h3 + p {
+            margin-top: 0.25rem; /* Reduced spacing */
+        }
+        
+        /* Make sure numbered sections have tight spacing in group */
+        #summary-content h3[id^="section-"] + p {
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="text-2xl font-bold gradient-text">BTModel Web</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div class="inline-flex shadow-sm rounded-md" role="group">
+                        <button id="view-research-btn" class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-100 border border-blue-300 rounded-l-md hover:bg-blue-200 focus:outline-none">
+                            Research
+                        </button>
+                        <button id="view-discussion-btn" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border-t border-b border-gray-300 hover:bg-gray-50 focus:outline-none">
+                            Discussion
+                        </button>
+                        <button id="view-summary-btn" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 focus:outline-none">
+                            Summary
+                        </button>
+                    </div>
+                    <button id="print-btn" class="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        Print Report
+                    </button>
+                    <a href="/" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:border-blue-700 focus:shadow-outline-blue active:bg-blue-700 transition ease-in-out duration-150">
+                        New Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <main class="flex-grow">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <!-- Loading State -->
+            <div id="loading-state" class="bg-white shadow rounded-lg p-6 mb-8">
+                <div class="text-center py-8">
+                    <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Loading Analysis Results</h3>
+                    <p class="text-gray-500" id="loading-message">Retrieving data from the server...</p>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="hidden bg-white shadow rounded-lg p-6 mb-8">
+                <div class="text-center py-6">
+                    <svg class="mx-auto h-12 w-12 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Something went wrong</h3>
+                    <p class="text-gray-500 mb-6" id="error-message">Unable to load analysis results.</p>
+                    <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Start a new analysis
+                    </a>
+                </div>
+            </div>
+
+            <!-- Results Content -->
+            <div id="results-content" class="hidden">
+                <!-- Research Section -->
+                <div id="research-section" class="bg-white shadow rounded-lg p-6 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h1 id="company-title" class="text-3xl font-bold text-gray-900">Company Analysis</h1>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            Research Data
+                        </span>
+                    </div>
+                    <div id="research-data" class="text-gray-700 prose max-w-none"></div>
+                </div>
+
+                <!-- Discussion Section -->
+                <div id="discussion-section" class="mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-gray-900">Expert Discussion</h2>
+                    </div>
+                    <div class="bg-white shadow rounded-lg p-6 mb-8">
+                        <div id="conversation-container" class="space-y-4">
+                            <!-- Conversation messages will appear here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Section -->
+                <div id="summary-section" class="bg-white shadow rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-gray-900">Executive Summary</h2>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            Key Insights
+                        </span>
+                    </div>
+                    <div id="summary-content" class="prose max-w-none text-gray-700"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white mt-8">
+        <div class="max-w-7xl mx-auto py-6 px-4 overflow-hidden sm:px-6 lg:px-8">
+            <p class="text-center text-base leading-6 text-gray-500">
+                &copy; 2025 BTModel Web. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sessionId = "{{ session_id }}";
+            console.log("Session ID:", sessionId);
+
+            // DOM Elements
+            const loadingState = document.getElementById('loading-state');
+            const errorState = document.getElementById('error-state');
+            const resultsContent = document.getElementById('results-content');
+            const loadingMessage = document.getElementById('loading-message');
+            const errorMessage = document.getElementById('error-message');
+            
+            const companyTitle = document.getElementById('company-title');
+            const researchData = document.getElementById('research-data');
+            const conversationContainer = document.getElementById('conversation-container');
+            const summaryContent = document.getElementById('summary-content');
+            
+            const printBtn = document.getElementById('print-btn');
+            
+            // Section navigation buttons
+            const viewResearchBtn = document.getElementById('view-research-btn');
+            const viewDiscussionBtn = document.getElementById('view-discussion-btn');
+            const viewSummaryBtn = document.getElementById('view-summary-btn');
+            
+            const researchSection = document.getElementById('research-section');
+            const discussionSection = document.getElementById('discussion-section');
+            const summarySection = document.getElementById('summary-section');
+            
+            // Function to remove quotation marks from facilitator messages
+            function cleanFacilitatorMessage(message) {
+                // Check if the message starts and ends with quotation marks
+                if (message.startsWith('"') && message.endsWith('"')) {
+                    return message.substring(1, message.length - 1);
+                }
+                
+                // Also handle cases where it's in the format of "Let's begin..." + "Question..."
+                return message.replace(/^"(Let's begin.+?)" "(.+?)"$/, "$1 $2")
+                              .replace(/^"(.+?)"$/, "$1");
+            }
+            
+            // Helper function to format paragraphs consistently
+            function formatParagraphs(text) {
+                if (!text) return '';
+                
+                // Split by double line breaks to identify paragraphs
+                const paragraphs = text.split(/\n\s*\n/);
+                
+                // Process each paragraph separately
+                const formattedParagraphs = paragraphs.map(paragraph => {
+                    // Skip empty paragraphs
+                    if (!paragraph.trim()) return '';
+                    
+                    // Replace **text** with <strong>text</strong> for bold
+                    let formatted = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    
+                    // Replace *text* with <em>text</em> for italic
+                    formatted = formatted.replace(/\*([^\*]+?)\*/g, '<em>$1</em>');
+                    
+                    // Replace single line breaks with <br>
+                    formatted = formatted.replace(/\n/g, '<br>');
+                    
+                    return formatted;
+                });
+                
+                // Filter out empty paragraphs and join with proper <p> tags
+                return formattedParagraphs
+                    .filter(p => p.trim())
+                    .map(p => `<p>${p}</p>`)
+                    .join('\n');
+            }
+            
+            // Function to format research data with improved section detection and formatting
+            function formatResearchData(text) {
+                if (!text) return '';
+                
+                // Replace line breaks before parsing
+                let formattedText = text.replace(/\r\n/g, '\n');
+                
+                // Check for section headers pattern
+                const sectionRegex = /^([A-Za-z][A-Za-z\s]+):(?:\s*|$)/gm;
+                
+                // Identify sections
+                let sections = [];
+                let lastIndex = 0;
+                let match;
+                
+                // Reset regex
+                sectionRegex.lastIndex = 0;
+                
+                // Find all section headers
+                while ((match = sectionRegex.exec(formattedText)) !== null) {
+                    const sectionTitle = match[1].trim();
+                    const startIndex = match.index;
+                    
+                    // If this isn't the first section, add the previous one
+                    if (startIndex > lastIndex) {
+                        const content = formattedText.substring(lastIndex, startIndex).trim();
+                        if (content) {
+                            // Check if we're adding content for a previous section or standalone content
+                            if (sections.length > 0) {
+                                sections.push({ content, title: null });
+                            } else {
+                                sections.push({ content, title: null });
+                            }
+                        }
+                    }
+                    
+                    lastIndex = startIndex + match[0].length;
+                    sections.push({ title: sectionTitle, content: null });
+                }
+                
+                // Add the final section content
+                if (lastIndex < formattedText.length) {
+                    const content = formattedText.substring(lastIndex).trim();
+                    if (content && sections.length > 0) {
+                        // Update the last section with its content
+                        sections[sections.length - 1].content = content;
+                    } else if (content) {
+                        // If no sections found, or orphaned content
+                        sections.push({ content, title: null });
+                    }
+                }
+                
+                // Format sections
+                let result = '';
+                
+                // Function to format a single section
+                function formatSection(section) {
+                    let output = '';
+                    
+                    if (section.title) {
+                        output += `<strong class="section-title">${section.title}</strong>`;
+                    }
+                    
+                    if (section.content) {
+                        // Format bullet points before creating paragraphs
+                        let content = section.content;
+                        const lines = content.split('\n');
+                        let formattedLines = [];
+                        
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            
+                            // Format bullet points
+                            if (line.startsWith('- ')) {
+                                formattedLines.push(`<p class="bullet-list-item"><strong class="bullet-item">•</strong>${line.substring(2)}</p>`);
+                            } else {
+                                formattedLines.push(line);
+                            }
+                        }
+                        
+                        content = formattedLines.join('\n');
+                        const contentFormatted = formatParagraphs(content);
+                        output += contentFormatted;
+                    }
+                    
+                    return output;
+                }
+                
+                // Process each section
+                sections.forEach(section => {
+                    result += `<div class="section-container">${formatSection(section)}</div>`;
+                });
+                
+                return result;
+            }
+            
+            // Function to format summary content with special formatting for sections and reduced spacing
+            function formatSummaryContent(text) {
+                if (!text) return '';
+                
+                // First do basic formatting
+                let formatted = formatParagraphs(text);
+                
+                // Look for numbered sections and format as headings with IDs for better targeting
+                formatted = formatted.replace(/<p>(\d+)\.\s+([A-Za-z\s]+):/g, 
+                    '<h3 id="section-$1" class="text-lg font-semibold">$1. $2</h3><p>');
+                
+                // Format section items with dashes as list items with tighter spacing
+                formatted = formatted.replace(/<p>-\s+([^<]+)<\/p>/g,
+                    '<p class="bullet-list-item"><strong class="bullet-item">•</strong> $1</p>');
+                
+                return formatted;
+            }
+            
+            // Agent color mapping
+            const agentColors = {
+                'Business Strategist': 'Business',
+                'Product Manager': 'Product',
+                'Technology Officer': 'Technology',
+                'Innovation Analyst': 'Innovation',
+                'Facilitator': 'Facilitator'
+            };
+            
+            // Section navigation
+            viewResearchBtn.addEventListener('click', function() {
+                setActiveSection('research');
+            });
+            
+            viewDiscussionBtn.addEventListener('click', function() {
+                setActiveSection('discussion');
+            });
+            
+            viewSummaryBtn.addEventListener('click', function() {
+                setActiveSection('summary');
+            });
+            
+            function setActiveSection(section) {
+                // Reset all buttons
+                viewResearchBtn.classList.remove('text-blue-700', 'bg-blue-100');
+                viewDiscussionBtn.classList.remove('text-blue-700', 'bg-blue-100');
+                viewSummaryBtn.classList.remove('text-blue-700', 'bg-blue-100');
+                
+                viewResearchBtn.classList.add('text-gray-700', 'bg-white');
+                viewDiscussionBtn.classList.add('text-gray-700', 'bg-white');
+                viewSummaryBtn.classList.add('text-gray-700', 'bg-white');
+                
+                // Hide all sections
+                researchSection.classList.add('hidden');
+                discussionSection.classList.add('hidden');
+                summarySection.classList.add('hidden');
+                
+                // Set active button and section
+                if (section === 'research') {
+                    viewResearchBtn.classList.remove('text-gray-700', 'bg-white');
+                    viewResearchBtn.classList.add('text-blue-700', 'bg-blue-100');
+                    researchSection.classList.remove('hidden');
+                } else if (section === 'discussion') {
+                    viewDiscussionBtn.classList.remove('text-gray-700', 'bg-white');
+                    viewDiscussionBtn.classList.add('text-blue-700', 'bg-blue-100');
+                    discussionSection.classList.remove('hidden');
+                } else if (section === 'summary') {
+                    viewSummaryBtn.classList.remove('text-gray-700', 'bg-white');
+                    viewSummaryBtn.classList.add('text-blue-700', 'bg-blue-100');
+                    summarySection.classList.remove('hidden');
+                }
+            }
+            
+            // Create avatar initials from name
+            function getInitials(name) {
+                return name.split(' ').map(word => word[0]).join('').substring(0, 2);
+            }
+            
+            // Create message element
+            function createMessageElement(speaker, message, to = null, isHtml = false) {
+                const agentType = agentColors[speaker] || 'Facilitator';
+                
+                const messageEl = document.createElement('div');
+                messageEl.className = `agent-message border-l-4 message-${agentType} pl-4 py-3 flex`;
+                
+                const avatarEl = document.createElement('div');
+                avatarEl.className = `agent-avatar agent-${agentType} mr-4 flex-shrink-0`;
+                avatarEl.textContent = getInitials(speaker);
+                
+                const contentEl = document.createElement('div');
+                contentEl.className = 'flex-grow';
+                
+                const nameEl = document.createElement('h4');
+                nameEl.className = 'text-sm font-medium text-gray-900';
+                if (to) {
+                    nameEl.textContent = `${speaker} → ${to}`;
+                } else {
+                    nameEl.textContent = speaker;
+                }
+                
+                const textEl = document.createElement('div');
+                textEl.className = 'text-gray-700 mt-1 message-text';
+                
+                if (isHtml) {
+                    textEl.innerHTML = message;
+                } else {
+                    textEl.textContent = message;
+                }
+                
+                contentEl.appendChild(nameEl);
+                contentEl.appendChild(textEl);
+                
+                messageEl.appendChild(avatarEl);
+                messageEl.appendChild(contentEl);
+                
+                return messageEl;
+            }
+            
+            // Create round header element
+            function createRoundHeaderElement(text) {
+                const headerEl = document.createElement('div');
+                headerEl.className = 'text-center py-2 my-6';
+                
+                const roundEl = document.createElement('span');
+                roundEl.className = 'px-4 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-800';
+                roundEl.textContent = text;
+                
+                headerEl.appendChild(roundEl);
+                return headerEl;
+            }
+            
+            // Handle print button
+            printBtn.addEventListener('click', function() {
+                // Show all sections for printing
+                researchSection.classList.remove('hidden');
+                discussionSection.classList.remove('hidden');
+                summarySection.classList.remove('hidden');
+                
+                // Wait a moment for DOM to update
+                setTimeout(() => {
+                    window.print();
+                    
+                    // After printing, restore view state
+                    if (viewResearchBtn.classList.contains('text-blue-700')) {
+                        setActiveSection('research');
+                    } else if (viewDiscussionBtn.classList.contains('text-blue-700')) {
+                        setActiveSection('discussion');
+                    } else if (viewSummaryBtn.classList.contains('text-blue-700')) {
+                        setActiveSection('summary');
+                    } else {
+                        // Default view is discussion
+                        setActiveSection('discussion');
+                    }
+                }, 100);
+            });
+            
+            // Connect to SocketIO
+            console.log("Connecting to Socket.IO...");
+            const socket = io();
+            
+            socket.on('connect', function() {
+                console.log("Socket connected");
+                loadingMessage.textContent = "Connected to server, retrieving analysis data...";
+                
+                // Request session data
+                socket.emit('get_session_data', { session_id: sessionId });
+                console.log("Requested session data");
+            });
+            
+            socket.on('connect_error', function(error) {
+                console.error("Socket connection error:", error);
+                showError("Failed to connect to the server");
+            });
+            
+            // Handle session data
+            socket.on('session_data', function(data) {
+                console.log("Received session data:", data);
+                
+                // Set company title
+                companyTitle.textContent = `Analysis of ${data.company_name || 'Company'}`;
+                
+                // Set research data if available, with formatted bold text and section headers
+                if (data.research_data) {
+                    researchData.innerHTML = formatResearchData(data.research_data);
+                }
+                
+                // Process transcript if available
+                if (data.transcript && data.transcript.length > 0) {
+                    processTranscript(data.transcript);
+                }
+                
+                // Set summary if available, with formatted bold text
+                if (data.summary) {
+                    summaryContent.innerHTML = formatSummaryContent(data.summary);
+                    
+                    // Show results content and hide loading
+                    loadingState.classList.add('hidden');
+                    resultsContent.classList.remove('hidden');
+                    
+                    // Show the discussion section by default
+                    setActiveSection('discussion');
+                } else {
+                    // Update loading message based on status
+                    if (data.status === 'research') {
+                        loadingMessage.textContent = `Researching ${data.company_name}...`;
+                    } else if (data.status === 'discussion') {
+                        loadingMessage.textContent = "Expert discussion in progress...";
+                    } else if (data.status === 'summarizing') {
+                        loadingMessage.textContent = "Creating executive summary...";
+                    } else if (data.status === 'error') {
+                        showError(data.error || "An error occurred during analysis");
+                    }
+                }
+            });
+            
+            // Handle research complete
+            socket.on('research_complete', function(data) {
+                console.log("Research complete:", data);
+                
+                if (data.company_name) {
+                    companyTitle.textContent = `Analysis of ${data.company_name}`;
+                }
+                
+                researchData.innerHTML = formatResearchData(data.research_data);
+                loadingMessage.textContent = "Research complete, starting expert discussion...";
+            });
+            
+            // Handle round updates
+            socket.on('round_update', function(data) {
+                console.log("Round update:", data);
+                
+                const roundEl = createRoundHeaderElement(data.message);
+                conversationContainer.appendChild(roundEl);
+            });
+            
+            // Handle new messages
+            socket.on('message', function(data) {
+                console.log("New message:", data);
+                loadingMessage.textContent = "Discussion in progress...";
+                
+                let messageEl;
+                let messageText = data.message;
+                
+                // Clean facilitator messages by removing quotes
+                if (data.speaker === 'Facilitator') {
+                    messageText = cleanFacilitatorMessage(messageText);
+                }
+                
+                const formattedMessage = formatText(messageText);
+                
+                if (data.speaker === 'Facilitator') {
+                    messageEl = createMessageElement(data.speaker, formattedMessage, data.to, true);
+                } else {
+                    messageEl = createMessageElement(data.speaker, formattedMessage, null, true);
+                }
+                
+                conversationContainer.appendChild(messageEl);
+                
+                // Animate appearance
+                setTimeout(() => {
+                    messageEl.classList.add('appear');
+                }, 100);
+            });
+            
+            // Basic text formatting function
+            function formatText(text) {
+                if (!text) return '';
+                
+                // Replace **text** with <strong>text</strong> for bold
+                let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Replace *text* with <em>text</em> for italic 
+                formatted = formatted.replace(/\*([^\*]+?)\*/g, '<em>$1</em>');
+                
+                return formatted;
+            }
+            
+            // Handle analysis complete
+            socket.on('analysis_complete', function(data) {
+                console.log("Analysis complete:", data);
+                
+                if (data.summary) {
+                    summaryContent.innerHTML = formatSummaryContent(data.summary);
+                    
+                    // Show results content and hide loading
+                    loadingState.classList.add('hidden');
+                    resultsContent.classList.remove('hidden');
+                    
+                    // Show the discussion section by default
+                    setActiveSection('discussion');
+                    
+                    // Make sure no other loading indicators are visible
+                    hideAllLoaders();
+                } else if (data.error) {
+                    showError(data.error);
+                }
+            });
+            
+            // Function to hide ALL loading indicators
+            function hideAllLoaders() {
+                // Get all elements that might be loaders
+                document.querySelectorAll('.loading-indicator, .loading-state, [id$="-loading"]').forEach(el => {
+                    el.classList.add('hidden');
+                });
+            }
+            
+            // Handle errors
+            socket.on('error', function(data) {
+                console.error("Error:", data);
+                showError(data.error || "An unexpected error occurred");
+            });
+            
+            // Process transcript array
+            function processTranscript(transcript) {
+                console.log("Processing transcript:", transcript);
+                
+                // Clear container first
+                conversationContainer.innerHTML = '';
+                
+                // Process each line in the transcript
+                for (let i = 0; i < transcript.length; i++) {
+                    const line = transcript[i];
+                    
+                    // Skip empty lines
+                    if (!line.trim()) continue;
+                    
+                    // Check for round headers
+                    if (line.startsWith('===')) {
+                        const roundEl = createRoundHeaderElement(line);
+                        conversationContainer.appendChild(roundEl);
+                    } 
+                    // Check for facilitator messages
+                    else if (line.startsWith('Facilitator (to ')) {
+                        const match = line.match(/Facilitator \(to (.+?)\): (.+)/);
+                        if (match) {
+                            const to = match[1];
+                            let message = match[2];
+                            
+                            // Clean facilitator messages by removing quotes
+                            message = cleanFacilitatorMessage(message);
+                            
+                            const formattedMessage = formatText(message);
+                            const messageEl = createMessageElement('Facilitator', formattedMessage, to, true);
+                            messageEl.classList.add('appear');
+                            conversationContainer.appendChild(messageEl);
+                        }
+                    }
+                    // Check for agent messages
+                    else if (line.includes(': ')) {
+                        const [speaker, ...messageParts] = line.split(': ');
+                        const message = messageParts.join(': ');
+                        if (speaker && message) {
+                            const formattedMessage = formatText(message);
+                            const messageEl = createMessageElement(speaker, formattedMessage, null, true);
+                            messageEl.classList.add('appear');
+                            conversationContainer.appendChild(messageEl);
+                        }
+                    }
+                }
+            }
+            
+            // Show error state
+            function showError(message) {
+                // Hide ALL loading states and indicators
+                hideAllLoaders();
+                
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+                errorMessage.textContent = message || "An error occurred during analysis";
+            }
+            
+            // Initialize view
+            setActiveSection('research');
+            
+            // Clean up any secondary loading indicators when page loads completely
+            window.addEventListener('load', function() {
+                // After a small delay to ensure content is loaded
+                setTimeout(hideAllLoaders, 500);
+            });
+        });
+    </script>
+</body>
+</html> 
